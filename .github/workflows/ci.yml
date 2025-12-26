@@ -13,13 +13,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Luacheck (Lua lint)
+      - name: Lua Lint
         run: |
           docker run --rm -v "$PWD:/work" -w /work openresty/openresty:alpine-fat sh -lc '
-            apk add --no-cache lua5.1 luarocks &&
+            apk add --no-cache \
+              lua5.1 lua5.1-dev luarocks5.1 \
+              build-base &&
             luarocks-5.1 install luacheck &&
-            luacheck lua --globals ngx
-          '
+            luacheck --globals ngx --lua "lua/*.lua"
+
 
       - name: openresty -t (config syntax)
         run: |
