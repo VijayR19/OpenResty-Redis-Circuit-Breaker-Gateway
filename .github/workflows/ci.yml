@@ -16,7 +16,8 @@ jobs:
       - name: Luacheck (Lua lint)
         run: |
           docker run --rm -v "$PWD:/work" -w /work openresty/openresty:alpine-fat sh -lc '
-            apk add --no-cache luacheck &&
+            apk add --no-cache lua5.1 luarocks &&
+            luarocks-5.1 install luacheck &&
             luacheck lua --globals ngx
           '
 
@@ -26,7 +27,6 @@ jobs:
             cp conf/nginx.conf /usr/local/openresty/nginx/conf/nginx.conf &&
             openresty -t
           '
-
 
   smoke-test:
     runs-on: ubuntu-latest
