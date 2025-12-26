@@ -1,5 +1,4 @@
 local redis_client = require "redis_client"
-local ngx = require("ngx")
 
 --- ==== Cofig ====
 local REDIS_HOST = "127.0.0.1"
@@ -14,8 +13,9 @@ local HALF_OPEN_MAX_PROBES = 1
 local FAIL_OPEN = true  -- set false to fail closed
 
 -- ==== Shared state ====
-local cb = ngx.shared.cb_stats
+local cb = ngx.shared.redis_cb
 local stats = ngx.shared.cb_stats
+
 
 local function now ()
     return ngx.now()
@@ -43,7 +43,7 @@ local function set_state(s)
 end
 
 local function get_state()
-    return cb.get("state") or "closed"
+    return cb:get("state") or "closed"
 end
 
 local function record_success()
@@ -54,7 +54,7 @@ local function record_success()
 end
 
 local function record_failure()
-    local fails = (cb.get("fails") or 0) + 1
+    local fails = (cb:get("fails") or 0) + 1
     cb:set("fails", fails)
 
     if fails >= FAIL_THRESHOLD then
@@ -132,4 +132,5 @@ incr("redis_fail")
 local fails = record_failure()
 ngx.header["X-Redis-Err"] = err
 ngx.header["X-CB-Fails"] = fails
-return fallback()
+
+return fallback("closed_failed")
