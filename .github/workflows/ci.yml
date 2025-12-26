@@ -3,7 +3,7 @@ name: CI
 on:
   pull_request:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
   lint-and-config-test:
@@ -15,7 +15,7 @@ jobs:
 
       - name: Luacheck (Lua lint)
         run: |
-          docker run --rm -v "$PWD:/work" -w /work lua:5.1-alpine sh -lc '
+          docker run --rm -v "$PWD:/work" -w /work lua:5.4-alpine sh -lc '
             apk add --no-cache luarocks &&
             luarocks install luacheck &&
             luacheck lua
