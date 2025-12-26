@@ -21,6 +21,7 @@ jobs:
               build-base &&
             luarocks-5.1 install luacheck &&
             luacheck --globals ngx --lua "lua/*.lua"
+          '
 
 
       - name: openresty -t (config syntax)
