@@ -3,7 +3,7 @@ name: CI
 on:
   pull_request:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
   lint-and-config-test:
@@ -13,19 +13,21 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Luacheck (Lua lint)
+      - name: Lua Lint
         run: |
           docker run --rm -v "$PWD:/work" -w /work openresty/openresty:alpine-fat sh -lc '
-            luarocks install luacheck --local &&
-            ~/.luarocks/bin/luacheck lua
+            apk add --no-cache lua5.1 lua5.1-dev luarocks5.1 build-base &&
+            luarocks-5.1 install luacheck &&
+            luacheck lua --globals ngx
           '
 
-      - name: openresty -t (config syntax)
+      - name: nginx -t (config syntax)
         run: |
           docker run --rm -v "$PWD:/work" -w /work openresty/openresty:alpine-fat sh -lc '
             cp conf/nginx.conf /usr/local/openresty/nginx/conf/nginx.conf &&
-            openresty -t
+            /usr/local/openresty/nginx/sbin/nginx -t
           '
+
 
   smoke-test:
     runs-on: ubuntu-latest
@@ -52,9 +54,17 @@ jobs:
       - name: Smoke test endpoints
         run: |
           set -e
-          sleep 1
+
+          # wait for gateway
+          for i in {1..20}; do
+            if curl -fsS http://localhost:8080/health >/dev/null; then
+              break
+            fi
+            sleep 0.5
+          done
+
           curl -fsS http://localhost:8080/health
-          curl -fsS http://localhost:8080/protected
+          curl -fsS http://localhost:8080/protect
           curl -fsS http://localhost:8080/stats
 
       - name: Show gateway logs on failure
