@@ -1,0 +1,12 @@
+# OS/editor
+.DS_store
+*.swp
+.vscode/
+.idea/
+
+# Logs / runtime
+Logs/
+*.log
+
+# Secrets
+.env

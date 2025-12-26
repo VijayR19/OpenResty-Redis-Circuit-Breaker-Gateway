@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  lint-and-config-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Luacheck (Lua lint)
+        run: |
+          docker run --rm -v "$PWD:/work" -w /work openresty/openresty:alpine-fat sh -lc '
+            luarocks install luacheck --local &&
+            ~/.luarocks/bin/luacheck lua
+          '
+
+      - name: openresty -t (config syntax)
+        run: |
+          docker run --rm -v "$PWD:/work" -w /work openresty/openresty:alpine-fat sh -lc '
+            cp conf/nginx.conf /usr/local/openresty/nginx/conf/nginx.conf &&
+            openresty -t
+          '
+
+  smoke-test:
+    runs-on: ubuntu-latest
+    needs: lint-and-config-test
+
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Start OpenResty gateway
+        run: |
+          docker run -d --name gateway \
+            -p 8080:8080 \
+            -v "$PWD/conf/nginx.conf:/usr/local/openresty/nginx/conf/nginx.conf:ro" \
+            -v "$PWD/lua:/lua:ro" \
+            openresty/openresty:alpine-fat
+
+      - name: Smoke test endpoints
+        run: |
+          set -e
+          sleep 1
+          curl -fsS http://localhost:8080/health
+          curl -fsS http://localhost:8080/protected
+          curl -fsS http://localhost:8080/stats
+
+      - name: Show gateway logs on failure
+        if: failure()
+        run: docker logs gateway
+
+      - name: Stop gateway
+        if: always()
+        run: docker rm -f gateway
