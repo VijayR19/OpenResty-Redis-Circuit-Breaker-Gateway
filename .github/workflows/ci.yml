@@ -15,9 +15,10 @@ jobs:
 
       - name: Luacheck (Lua lint)
         run: |
-          docker run --rm -v "$PWD:/work" -w /work openresty/openresty:alpine-fat sh -lc '
-            luarocks install luacheck --local &&
-            ~/.luarocks/bin/luacheck lua
+          docker run --rm -v "$PWD:/work" -w /work lua:5.1-alpine sh -lc '
+            apk add --no-cache luarocks &&
+            luarocks install luacheck &&
+            luacheck lua
           '
 
       - name: openresty -t (config syntax)
@@ -53,14 +54,14 @@ jobs:
         run: |
           set -e
 
-          // wait for gateway
+          # wait for gateway
           for i in {1..20}; do
             if curl -fsS http://localhost:8080/health >/dev/null; then
               break
             fi
             sleep 0.5
           done
-          
+
           curl -fsS http://localhost:8080/health
           curl -fsS http://localhost:8080/protect
           curl -fsS http://localhost:8080/stats
