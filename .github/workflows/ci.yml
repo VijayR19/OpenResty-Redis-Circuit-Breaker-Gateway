@@ -52,9 +52,17 @@ jobs:
       - name: Smoke test endpoints
         run: |
           set -e
-          sleep 1
+
+          // wait for gateway
+          for i in {1..20}; do
+            if curl -fsS http://localhost:8080/health >/dev/null; then
+              break
+            fi
+            sleep 0.5
+          done
+          
           curl -fsS http://localhost:8080/health
-          curl -fsS http://localhost:8080/protected
+          curl -fsS http://localhost:8080/protect
           curl -fsS http://localhost:8080/stats
 
       - name: Show gateway logs on failure
