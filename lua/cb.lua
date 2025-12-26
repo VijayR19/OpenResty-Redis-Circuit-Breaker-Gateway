@@ -86,7 +86,7 @@ ngx.header["X-CB-Fails"] = cb:get("fails") or 0
 -- ==== OPEN =====
 if state == "open" then
     incr("cb_open")
-    if not cooldown_elapsed() then 
+    if not cooldown_elapsed() then
         return fallback("open")
     end
 
